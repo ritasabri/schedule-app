@@ -10,6 +10,26 @@ function getTeacher(idx) {
   return { name: DB.t[idx][0], email: DB.t[idx][1] };
 }
 
+function formatAtTag(name) {
+  if (!name) return "";
+  // If name already contains a comma ("Last, First"), try to normalize
+  if (name.includes(",")) {
+    const parts = name.split(",").map(s => s.trim());
+    if (parts.length >= 2) return `@${parts[0]}, ${parts.slice(1).join(", ")} (DCPS)`;
+  }
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return `@${parts[0]} (DCPS)`;
+  const last = parts.pop();
+  const first = parts.join(" ");
+  return `@${last}, ${first} (DCPS)`;
+}
+
+function getLastName(name) {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/);
+  return parts[parts.length - 1];
+}
+
 
 export default function App() {
   const [search, setSearch] = useState("");
@@ -88,15 +108,15 @@ export default function App() {
   }, [grouped, includeDouglas]);
 
   const uniqueAtTags = useMemo(() => {
-    const tags = [...new Set(grouped.map(g => `@${g.teacher.name}`))];
-    if (includeDouglas) tags.push("@Raychelle Douglas");
+    const tags = [...new Set(grouped.map(g => formatAtTag(g.teacher.name)))];
+    if (includeDouglas) tags.push(formatAtTag("Raychelle Douglas"));
     return tags;
   }, [grouped, includeDouglas]);
 
   const teamsMessage = useMemo(() => {
     return grouped.map(g => {
       const parts = g.entries.map(e => `${e.periods.join(", ")}: ${e.student}`);
-      return `@${g.teacher.name} — ${parts.join(" / ")}`;
+      return `${formatAtTag(g.teacher.name)} — ${parts.join(" / ")}`;
     }).join("\n\n");
   }, [grouped]);
 
@@ -280,7 +300,7 @@ export default function App() {
               <div style={{ background: "#f8fafc", borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.8, color: "#334155", whiteSpace: "pre-wrap", border: "1px solid #e2e8f0" }}>
                 {grouped.map((g, i) => (
                   <div key={i} style={{ marginBottom: 8 }}>
-                    <span style={{ color: "#2563eb", fontWeight: 600 }}>@{g.teacher.name}</span>
+                    <span style={{ color: "#2563eb", fontWeight: 600 }}>{formatAtTag(g.teacher.name)}</span>
                     <span style={{ color: "#94a3b8" }}> — </span>
                     <span>{g.entries.map(e => `${e.periods.join(", ")}: ${e.student}`).join(" / ")}</span>
                   </div>
@@ -307,8 +327,8 @@ export default function App() {
                     <div style={{ fontSize: 12, color: "#94a3b8" }}>{r.teacher.email}</div>
                     <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Student: {r.student}</div>
                   </div>
-                  <button onClick={() => copyText(`@${r.teacher.name}`, `row-${i}`)} style={copyBtnStyle(`row-${i}`, "#94a3b8")}>
-                    {copied === `row-${i}` ? "Copied!" : `Copy @${r.teacher.name.split(" ")[0]}`}
+                  <button onClick={() => copyText(formatAtTag(r.teacher.name), `row-${i}`)} style={copyBtnStyle(`row-${i}`, "#94a3b8")}>
+                    {copied === `row-${i}` ? "Copied!" : `Copy @${getLastName(r.teacher.name)}`}
                   </button>
                 </div>
               ))}
